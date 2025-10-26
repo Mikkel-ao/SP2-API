@@ -1,4 +1,5 @@
 # SP2-API
+---
 A RESTful API built with **Javalin** and **Hibernate** that powers a discussion platform.  
 The application automatically retrieves recent news articles from **NewsAPI.org**, creates discussion posts based on them, and allows registered users to engage by commenting and voting on both posts and comments.
 ---
