@@ -1,0 +1,174 @@
+### Test API health
+GET http://localhost:7070/api/auth/test
+Accept: application/json
+
+###
+
+### Register a new user (gets USER role by default)
+POST http://localhost:7070/api/auth/register
+Content-Type: application/json
+Accept: application/json
+
+{
+  "username": "Hansi",
+  "password": "hansipassword"
+}
+
+###
+
+### Login as the new user
+POST http://localhost:7070/api/auth/login
+Content-Type: application/json
+Accept: application/json
+
+{
+  "username": "Hansi",
+  "password": "hansipassword"
+}
+
+> {%
+    client.global.set("jwt_token", response.body.token);
+    console.log("JWT Token after login:", client.global.get("jwt_token"));
+%}
+
+###
+
+### Add ADMIN role to the user
+POST http://localhost:7070/api/auth/user/addrole/
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "role": "ADMIN"
+}
+
+###
+
+### Login again to get JWT with ADMIN role
+POST http://localhost:7070/api/auth/login
+Content-Type: application/json
+Accept: application/json
+
+{
+  "username": "Hansi",
+  "password": "hansipassword"
+}
+
+> {%
+    client.global.set("jwt_token", response.body.token);
+    console.log("JWT Token with ADMIN role:", client.global.get("jwt_token"));
+%}
+
+###
+
+### Create a new post (ADMIN only)
+POST http://localhost:7070/api/posts/
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "title": "Welcome post",
+  "content": "First post from .http file"
+}
+
+###
+
+### Get all posts (public)
+GET http://localhost:7070/api/posts/
+Accept: application/json
+
+###
+
+### Get a specific post by ID (public)
+GET http://localhost:7070/api/posts/1
+Accept: application/json
+
+###
+
+### Create a comment on post ID 1 (logged-in users)
+POST http://localhost:7070/api/comments/
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "content": "This is the first comment on the Welcome post!",
+  "post": {
+    "id": 1
+  }
+}
+
+###
+
+### Get all comments (public)
+GET http://localhost:7070/api/comments/
+Accept: application/json
+
+###
+
+### Get a specific comment by ID (public)
+GET http://localhost:7070/api/comments/1
+Accept: application/json
+
+###
+
+### Delete a comment by ID (author or admin)
+DELETE http://localhost:7070/api/comments/1
+Authorization: Bearer {{jwt_token}}
+
+###
+
+### --- VOTES SECTION ---
+
+### Cast an upvote (+1) on post ID 1
+POST http://localhost:7070/api/votes/
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "value": 1,
+  "postId": 1
+}
+
+###
+
+### Cast a downvote (-1) on comment ID 1
+POST http://localhost:7070/api/votes/
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "value": -1,
+  "commentId": 1
+}
+
+###
+
+### Get all votes (admin or debug)
+GET http://localhost:7070/api/votes/
+Accept: application/json
+
+###
+
+### Get a specific vote by ID
+GET http://localhost:7070/api/votes/1
+Accept: application/json
+
+###
+
+### Delete a specific vote (user or admin)
+DELETE http://localhost:7070/api/votes/1
+Authorization: Bearer {{jwt_token}}
+
+###
+
+### --- EXTERNAL NEWS SECTION ---
+
+### Fetch tech news from external service (ADMIN only)
+POST http://localhost:7070/api/external/fetch-news
+Authorization: Bearer {{jwt_token}}
+Accept: application/json
