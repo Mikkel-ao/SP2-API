@@ -9,13 +9,15 @@ import org.junit.jupiter.api.*;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class BaseDAOTest {
 
-    protected EntityManagerFactory emf;
+    protected static EntityManagerFactory emf;
     protected TestPopulator populator;
 
     @BeforeAll
-    void setupOnce() {
-        emf = HibernateConfig.getEntityManagerFactoryForTest();
-        populator = new TestPopulator(emf);
+    static void setupOnce() {
+        // Create factory only once for all DAO tests
+        if (emf == null || !emf.isOpen()) {
+            emf = HibernateConfig.getEntityManagerFactoryForTest();
+        }
     }
 
     @BeforeEach
@@ -27,11 +29,15 @@ public abstract class BaseDAOTest {
             """).executeUpdate();
             em.getTransaction().commit();
         }
+        if (populator == null) {
+            populator = new TestPopulator(emf);
+        }
         populator.populate();
     }
 
     @AfterAll
-    void tearDown() {
+    static void tearDown() {
+        // Optional: close at very end of test suite
         if (emf != null && emf.isOpen()) {
             emf.close();
         }
