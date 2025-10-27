@@ -6,6 +6,7 @@ import app.daos.UserDAO;
 import app.entities.Post;
 import app.entities.User;
 import app.populators.TestPopulator;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -24,17 +25,20 @@ class NewsApiServiceTest {
 
     @BeforeEach
     void setup() {
-        assertNotNull(System.getenv("NEWS_API_KEY"), "Please set your NewsAPI key in your environment");
+        String apiKey = System.getenv("NEWS_API_KEY");
+        Assumptions.assumeTrue(apiKey != null && !apiKey.isBlank(),
+                "Skipping test: NEWS_API_KEY not set in environment.");
+
         emf = HibernateConfig.getEntityManagerFactoryForTest();
         userDAO = new UserDAO(emf);
         postDAO = new PostDAO(emf);
         newsApiService = new NewsApiService(postDAO, userDAO);
 
-        // Populate admin user for tests - Admin needed for persisting posts. Consider proper populator instead
         if (userDAO.findByUsername("admin") == null) {
             userDAO.create(new User("admin", "adminpass"));
         }
     }
+
 
 
     @Test

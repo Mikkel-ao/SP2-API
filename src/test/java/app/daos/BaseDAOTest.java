@@ -10,14 +10,12 @@ import org.junit.jupiter.api.*;
 public abstract class BaseDAOTest {
 
     protected static EntityManagerFactory emf;
-    protected TestPopulator populator;
+    protected static TestPopulator populator;
 
     @BeforeAll
     static void setupOnce() {
-        // Create factory only once for all DAO tests
-        if (emf == null || !emf.isOpen()) {
-            emf = HibernateConfig.getEntityManagerFactoryForTest();
-        }
+        emf = HibernateConfig.getEntityManagerFactoryForTest();
+        populator = new TestPopulator(emf);
     }
 
     @BeforeEach
@@ -29,17 +27,11 @@ public abstract class BaseDAOTest {
             """).executeUpdate();
             em.getTransaction().commit();
         }
-        if (populator == null) {
-            populator = new TestPopulator(emf);
-        }
         populator.populate();
     }
 
     @AfterAll
     static void tearDown() {
-        // Optional: close at very end of test suite
-        if (emf != null && emf.isOpen()) {
-            emf.close();
-        }
+        HibernateConfig.closeFactories();
     }
 }
