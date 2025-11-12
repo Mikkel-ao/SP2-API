@@ -1,4 +1,4 @@
-package app.controllers;
+package app.securities.controllers;
 
 import app.enums.UserRole;
 import dk.bugelhartmann.UserDTO;

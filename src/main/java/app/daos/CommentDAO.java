@@ -3,6 +3,7 @@ package app.daos;
 import app.entities.Comment;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
+
 import java.util.List;
 
 public class CommentDAO {
@@ -20,15 +21,37 @@ public class CommentDAO {
         }
     }
 
+    /** Fetch comment with author, post, parent, and replies (and their authors) */
     public Comment find(Long id) {
         try (EntityManager em = emf.createEntityManager()) {
-            return em.find(Comment.class, id);
+            List<Comment> comments = em.createQuery("""
+                    SELECT DISTINCT c FROM Comment c
+                    LEFT JOIN FETCH c.author
+                    LEFT JOIN FETCH c.post
+                    LEFT JOIN FETCH c.parent
+                    LEFT JOIN FETCH c.replies r
+                    LEFT JOIN FETCH r.author
+                    WHERE c.id = :id
+                    """, Comment.class)
+                    .setParameter("id", id)
+                    .getResultList();
+
+            return comments.isEmpty() ? null : comments.get(0);
         }
     }
 
+    /** Fetch all comments with joined relations to avoid lazy loading */
     public List<Comment> findAll() {
         try (EntityManager em = emf.createEntityManager()) {
-            return em.createQuery("SELECT c FROM Comment c", Comment.class)
+            return em.createQuery("""
+                    SELECT DISTINCT c FROM Comment c
+                    LEFT JOIN FETCH c.author
+                    LEFT JOIN FETCH c.post
+                    LEFT JOIN FETCH c.parent
+                    LEFT JOIN FETCH c.replies r
+                    LEFT JOIN FETCH r.author
+                    ORDER BY c.createdAt DESC
+                    """, Comment.class)
                     .getResultList();
         }
     }
@@ -41,13 +64,14 @@ public class CommentDAO {
         }
     }
 
+    /** Soft delete comment */
     public boolean delete(Long id) {
         try (EntityManager em = emf.createEntityManager()) {
             em.getTransaction().begin();
             Comment comment = em.find(Comment.class, id);
             if (comment != null) {
                 comment.markDeleted(); // soft delete
-                em.merge(comment); // persist changes
+                em.merge(comment);
                 em.getTransaction().commit();
                 return true;
             }
@@ -55,5 +79,4 @@ public class CommentDAO {
             return false;
         }
     }
-
 }

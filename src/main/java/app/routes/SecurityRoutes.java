@@ -3,7 +3,7 @@ package app.routes;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import app.utils.Utils;
-import app.controllers.SecurityController;
+import app.securities.controllers.SecurityController;
 import app.enums.UserRole;
 import io.javalin.apibuilder.EndpointGroup;
 

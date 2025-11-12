@@ -1,4 +1,4 @@
-package app.daos;
+package app.securities.daos;
 
 
 import app.entities.Role;

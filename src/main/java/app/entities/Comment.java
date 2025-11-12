@@ -2,10 +2,9 @@ package app.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "comments")
@@ -25,17 +24,24 @@ public class Comment {
 
     private Instant createdAt;
 
-    @ManyToOne(optional = true)
+    // Small relation, fine to be eager
+    @ManyToOne(fetch = FetchType.EAGER)
     private User author;
 
-    @ManyToOne(optional = false)
+    // Needed for DTO mapping
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     private Post post;
 
-    @ManyToOne
+    // Parent is recursive, keep it lazy
+    @ManyToOne(fetch = FetchType.LAZY)
     private Comment parent;
 
-    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = false)
-    private List<Comment> replies = new ArrayList<>();
+    // Use Set to avoid MultipleBagFetchException
+    @OneToMany(mappedBy = "parent",
+            cascade = CascadeType.ALL,
+            orphanRemoval = false,
+            fetch = FetchType.LAZY)
+    private Set<Comment> replies = new HashSet<>();
 
     @Column(nullable = false)
     private boolean deleted = false;

@@ -1,11 +1,12 @@
 package app.routes;
 
+import app.configs.HibernateConfig;
 import app.controllers.CommentController;
 import app.daos.CommentDAO;
 import app.daos.PostDAO;
 import app.daos.UserDAO;
-import app.configs.HibernateConfig;
 import app.enums.UserRole;
+import app.services.CommentService;
 import io.javalin.apibuilder.EndpointGroup;
 import jakarta.persistence.EntityManagerFactory;
 
@@ -17,11 +18,13 @@ public class CommentRoute {
 
     public CommentRoute() {
         EntityManagerFactory emf = HibernateConfig.getEntityManagerFactory();
-        this.commentController = new CommentController(
-                new CommentDAO(emf),
-                new PostDAO(emf),
-                new UserDAO(emf)
-        );
+        CommentDAO commentDAO = new CommentDAO(emf);
+        PostDAO postDAO = new PostDAO(emf);
+        UserDAO userDAO = new UserDAO(emf);
+        // Create service with DAOs
+        CommentService commentService = new CommentService(commentDAO, postDAO, userDAO);
+        // Create controller with service
+        this.commentController = new CommentController(commentService);
     }
 
     protected EndpointGroup getRoutes() {

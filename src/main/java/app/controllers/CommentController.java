@@ -1,91 +1,50 @@
 package app.controllers;
 
-import app.daos.CommentDAO;
-import app.daos.PostDAO;
-import app.daos.UserDAO;
-import app.entities.Comment;
-import app.entities.Post;
-import app.entities.User;
+import app.dtos.CommentDTO;
+import app.services.CommentService;
 import dk.bugelhartmann.UserDTO;
 import io.javalin.http.Context;
-import io.javalin.http.UnauthorizedResponse;
 
-import java.time.Instant;
-import java.util.List;
+public class CommentController implements IController<CommentDTO> {
 
-public class CommentController {
+    private final CommentService service;
 
-    private final CommentDAO commentDAO;
-    private final PostDAO postDAO;
-    private final UserDAO userDAO;
-
-    public CommentController(CommentDAO commentDAO, PostDAO postDAO, UserDAO userDAO) {
-        this.commentDAO = commentDAO;
-        this.postDAO = postDAO;
-        this.userDAO = userDAO;
+    // Constructor injection: service is provided
+    public CommentController(CommentService service) {
+        this.service = service;
     }
 
+    @Override
     public void getAll(Context ctx) {
-        ctx.json(commentDAO.findAll());
+        ctx.json(service.getAll(), CommentDTO.class);
     }
 
+    @Override
     public void getById(Context ctx) {
         Long id = ctx.pathParamAsClass("id", Long.class).get();
-        Comment comment = commentDAO.find(id);
-        if (comment == null) {
-            ctx.status(404).json("{\"msg\":\"Comment not found\"}");
-            return;
-        }
-        ctx.json(comment);
+        ctx.json(service.getById(id), CommentDTO.class);
     }
 
+    @Override
     public void create(Context ctx) {
-        UserDTO userDTO = ctx.attribute("user");
-        if (userDTO == null) throw new UnauthorizedResponse("Login required");
-
-        Comment input = ctx.bodyAsClass(Comment.class);
-        if (input.getContent() == null || input.getContent().isBlank()) {
-            ctx.status(400).json("{\"msg\":\"Content cannot be empty\"}");
-            return;
-        }
-
-        Post post = postDAO.find(input.getPost().getId());
-        if (post == null) {
-            ctx.status(404).json("{\"msg\":\"Post not found\"}");
-            return;
-        }
-
-        User author = userDAO.findByUsername(userDTO.getUsername());
-        if (author == null) throw new UnauthorizedResponse("User not found");
-
-        Comment comment = Comment.builder()
-                .content(input.getContent())
-                .createdAt(Instant.now())
-                .author(author)
-                .post(post)
-                .build();
-
-        commentDAO.create(comment);
-        ctx.status(201).json(comment);
+        UserDTO user = ctx.attribute("user");
+        CommentDTO input = ctx.bodyAsClass(CommentDTO.class);
+        ctx.status(201).json(service.create(input, user), CommentDTO.class);
     }
 
-    public void delete(Context ctx) {
-        UserDTO userDTO = ctx.attribute("user");
-        if (userDTO == null) throw new UnauthorizedResponse("Login required");
-
+    @Override
+    public void update(Context ctx) {
+        UserDTO user = ctx.attribute("user");
         Long id = ctx.pathParamAsClass("id", Long.class).get();
-        Comment comment = commentDAO.find(id);
-        if (comment == null) {
-            ctx.status(404).json("{\"msg\":\"Comment not found\"}");
-            return;
-        }
+        CommentDTO input = ctx.bodyAsClass(CommentDTO.class);
+        ctx.json(service.update(id, input, user), CommentDTO.class);
+    }
 
-        if (!userDTO.getRoles().contains("ADMIN") &&
-                !comment.getAuthor().getUsername().equals(userDTO.getUsername())) {
-            throw new UnauthorizedResponse("Not allowed to delete this comment");
-        }
-
-        commentDAO.delete(id);
+    @Override
+    public void delete(Context ctx) {
+        UserDTO user = ctx.attribute("user");
+        Long id = ctx.pathParamAsClass("id", Long.class).get();
+        service.delete(id, user);
         ctx.status(204);
     }
 }

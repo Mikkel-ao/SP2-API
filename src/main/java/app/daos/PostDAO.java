@@ -3,6 +3,7 @@ package app.daos;
 import app.entities.Post;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
+
 import java.util.List;
 
 public class PostDAO {
@@ -29,16 +30,37 @@ public class PostDAO {
         }
     }
 
-
+    /** Fetch post with author and comments (and their authors) */
     public Post find(Long id) {
         try (EntityManager em = emf.createEntityManager()) {
-            return em.find(Post.class, id);
+            List<Post> posts = em.createQuery("""
+                    SELECT DISTINCT p FROM Post p
+                    LEFT JOIN FETCH p.author
+                    LEFT JOIN FETCH p.comments c
+                    LEFT JOIN FETCH c.author
+                    LEFT JOIN FETCH c.replies r
+                    LEFT JOIN FETCH r.author
+                    WHERE p.id = :id
+                    """, Post.class)
+                    .setParameter("id", id)
+                    .getResultList();
+
+            return posts.isEmpty() ? null : posts.get(0);
         }
     }
 
+    /** Fetch all posts with author and comments (and their authors) */
     public List<Post> findAll() {
         try (EntityManager em = emf.createEntityManager()) {
-            return em.createQuery("SELECT p FROM Post p ORDER BY p.createdAt DESC", Post.class)
+            return em.createQuery("""
+                    SELECT DISTINCT p FROM Post p
+                    LEFT JOIN FETCH p.author
+                    LEFT JOIN FETCH p.comments c
+                    LEFT JOIN FETCH c.author
+                    LEFT JOIN FETCH c.replies r
+                    LEFT JOIN FETCH r.author
+                    ORDER BY p.createdAt DESC
+                    """, Post.class)
                     .getResultList();
         }
     }
@@ -75,5 +97,4 @@ public class PostDAO {
             return count > 0;
         }
     }
-
 }

@@ -1,10 +1,10 @@
-package app.controllers;
+package app.securities.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.nimbusds.jose.JOSEException;
 import app.configs.HibernateConfig;
-import app.daos.SecurityDAO;
+import app.securities.daos.SecurityDAO;
 import app.entities.User;
 import app.exceptions.*;
 import app.utils.Utils;
