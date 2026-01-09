@@ -42,12 +42,17 @@ public class ApplicationConfig {
         app.before(ApplicationConfig::corsHeaders);
         app.options("/*", ApplicationConfig::corsHeadersOptions);
 
+        // Access control for secured routes
         app.beforeMatched(accessController::accessHandler);
+
+        // Logging for every request
         app.after(ApplicationConfig::afterRequest);
 
+        // Exception handling
         app.exception(Exception.class, ApplicationConfig::generalExceptionHandler);
         app.exception(ApiException.class, ApplicationConfig::apiExceptionHandler);
 
+        // Populate initial data
         logger.info("Populating initial data...");
         dataPopulator.populateAll();
         logger.info("Data population complete.");
@@ -80,21 +85,22 @@ public class ApplicationConfig {
     }
 
     /**
-     * CORS – browser compliant and credential-safe
+     * CORS – development-friendly, credential-safe
      */
     private static void corsHeaders(Context ctx) {
         String origin = ctx.header("Origin");
 
-        if (origin != null && origin.equals("http://localhost:5173")) {
+        // Only allow requests from your React dev server
+        if ("http://localhost:5173".equals(origin)) {
             ctx.header("Access-Control-Allow-Origin", origin);
+            ctx.header("Access-Control-Allow-Credentials", "true");
+            ctx.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+            ctx.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
         }
-
-        ctx.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-        ctx.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-        ctx.header("Access-Control-Allow-Credentials", "true");
     }
 
     private static void corsHeadersOptions(Context ctx) {
+        // Respond to preflight OPTIONS request
         corsHeaders(ctx);
         ctx.status(204);
     }
