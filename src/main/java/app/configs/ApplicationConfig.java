@@ -29,7 +29,7 @@ public class ApplicationConfig {
     public static void configuration(JavalinConfig config) {
         config.showJavalinBanner = false;
         config.bundledPlugins.enableRouteOverview("/routes", UserRole.ANYONE);
-        config.router.contextPath = "/api"; // base path for all endpoints
+        config.router.contextPath = "/api";
         config.router.apiBuilder(routes.getRoutes());
         config.router.apiBuilder(SecurityRoutes.getSecuredRoutes());
         config.router.apiBuilder(SecurityRoutes.getSecurityRoutes());
@@ -38,13 +38,16 @@ public class ApplicationConfig {
     public static Javalin startServer(int port) {
         Javalin app = Javalin.create(ApplicationConfig::configuration);
 
+        // CORS MUST run before any auth or route matching
+        app.before(ApplicationConfig::corsHeaders);
+        app.options("/*", ApplicationConfig::corsHeadersOptions);
+
         app.beforeMatched(accessController::accessHandler);
         app.after(ApplicationConfig::afterRequest);
 
         app.exception(Exception.class, ApplicationConfig::generalExceptionHandler);
         app.exception(ApiException.class, ApplicationConfig::apiExceptionHandler);
 
-        // Populator(s) for filling the db
         logger.info("Populating initial data...");
         dataPopulator.populateAll();
         logger.info("Data population complete.");
@@ -74,5 +77,25 @@ public class ApplicationConfig {
         ctx.status(e.getCode());
         logger.warn("API exception - Code: {}, Message: {}", e.getCode(), e.getMessage());
         ctx.json(Utils.convertToJsonMessage(ctx, "warning", e.getMessage()));
+    }
+
+    /**
+     * CORS – browser compliant and credential-safe
+     */
+    private static void corsHeaders(Context ctx) {
+        String origin = ctx.header("Origin");
+
+        if (origin != null && origin.equals("http://localhost:5173")) {
+            ctx.header("Access-Control-Allow-Origin", origin);
+        }
+
+        ctx.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        ctx.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        ctx.header("Access-Control-Allow-Credentials", "true");
+    }
+
+    private static void corsHeadersOptions(Context ctx) {
+        corsHeaders(ctx);
+        ctx.status(204);
     }
 }
