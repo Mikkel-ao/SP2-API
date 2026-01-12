@@ -18,9 +18,11 @@ public class CommentMapper {
                 .postId(comment.getPost() != null ? comment.getPost().getId() : null)
                 .parentId(comment.getParent() != null ? comment.getParent().getId() : null)
                 .deleted(comment.isDeleted())
-                .replies(comment.getReplies() != null
-                        ? comment.getReplies().stream().map(CommentMapper::toDTO).collect(Collectors.toList())
-                        : null)
+                .replies(comment.getReplies() == null
+                        ? List.of()
+                        : comment.getReplies().stream()
+                        .map(CommentMapper::toDTO)
+                        .collect(Collectors.toList()))
                 .build();
     }
 
