@@ -53,9 +53,14 @@ public class ApplicationConfig {
         app.exception(ApiException.class, ApplicationConfig::apiExceptionHandler);
 
         // Populate initial data
+        /*
         logger.info("Populating initial data...");
         dataPopulator.populateAll();
         logger.info("Data population complete.");
+
+         */
+
+
 
         app.start(port);
         return app;
