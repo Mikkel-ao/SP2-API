@@ -82,11 +82,19 @@ public class CommentService {
         if (author == null)
             throw new UnauthorizedResponse("User not found");
 
+        Comment parent = null;
+        if (input.getParentId() != null) {
+            parent = commentDAO.find(input.getParentId());
+            if (parent == null)
+                throw new NotFoundResponse("Parent comment not found");
+        }
+
         Comment comment = Comment.builder()
                 .content(input.getContent())
                 .createdAt(Instant.now())
                 .author(author)
                 .post(post)
+                .parent(parent)
                 .build();
 
         commentDAO.create(comment);
@@ -94,6 +102,7 @@ public class CommentService {
 
         return CommentMapper.toDTO(comment);
     }
+
 
     /** Update comment */
     public CommentDTO update(Long id, CommentDTO input, UserDTO userDTO) {
