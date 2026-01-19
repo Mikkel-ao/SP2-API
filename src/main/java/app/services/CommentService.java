@@ -28,45 +28,27 @@ public class CommentService {
         this.userDAO = userDAO;
     }
 
-    /** Recursively initializes all comment relations to prevent lazy-loading issues */
-    private void initializeComment(Comment comment) {
-        if (comment == null) return;
-
-        // Author
-        if (comment.getAuthor() != null) comment.getAuthor().getUsername();
-
-        // Post
-        if (comment.getPost() != null) comment.getPost().getId();
-
-        // Parent
-        if (comment.getParent() != null) comment.getParent().getId();
-
-        // Recursively initialize replies
-        if (comment.getReplies() != null && !comment.getReplies().isEmpty()) {
-            comment.getReplies().forEach(this::initializeComment);
-        }
+    private User resolveUser(UserDTO userDTO) {
+        return userDTO == null
+                ? null
+                : userDAO.findByUsername(userDTO.getUsername());
     }
 
-    /** Get all comments */
-    public List<CommentDTO> getAll() {
-        List<Comment> comments = commentDAO.findAll();
-        comments.forEach(this::initializeComment);
-        return comments.stream()
-                .map(CommentMapper::toDTO)
+    public List<CommentDTO> getAll(UserDTO userDTO) {
+        User currentUser = resolveUser(userDTO);
+        return commentDAO.findAll().stream()
+                .map(c -> CommentMapper.toDTO(c, currentUser))
                 .toList();
     }
 
-    /** Get comment by ID */
-    public CommentDTO getById(Long id) {
+    public CommentDTO getById(Long id, UserDTO userDTO) {
         Comment comment = commentDAO.find(id);
         if (comment == null)
             throw new NotFoundResponse("Comment not found");
 
-        initializeComment(comment);
-        return CommentMapper.toDTO(comment);
+        return CommentMapper.toDTO(comment, resolveUser(userDTO));
     }
 
-    /** Create a new comment */
     public CommentDTO create(CommentDTO input, UserDTO userDTO) {
         if (userDTO == null)
             throw new UnauthorizedResponse("Login required");
@@ -78,7 +60,7 @@ public class CommentService {
         if (post == null)
             throw new NotFoundResponse("Post not found");
 
-        User author = userDAO.findByUsername(userDTO.getUsername());
+        User author = resolveUser(userDTO);
         if (author == null)
             throw new UnauthorizedResponse("User not found");
 
@@ -98,13 +80,9 @@ public class CommentService {
                 .build();
 
         commentDAO.create(comment);
-        initializeComment(comment);
-
-        return CommentMapper.toDTO(comment);
+        return CommentMapper.toDTO(comment, author);
     }
 
-
-    /** Update comment */
     public CommentDTO update(Long id, CommentDTO input, UserDTO userDTO) {
         if (userDTO == null)
             throw new UnauthorizedResponse("Login required");
@@ -114,18 +92,19 @@ public class CommentService {
             throw new NotFoundResponse("Comment not found");
 
         boolean isAdmin = userDTO.getRoles().contains("ADMIN");
-        boolean isOwner = existing.getAuthor().getUsername().equals(userDTO.getUsername());
+        boolean isOwner =
+                existing.getAuthor() != null &&
+                        existing.getAuthor().getUsername().equals(userDTO.getUsername());
+
         if (!isAdmin && !isOwner)
-            throw new UnauthorizedResponse("Not allowed to update this comment");
+            throw new UnauthorizedResponse("Not allowed");
 
         existing.setContent(input.getContent());
         commentDAO.update(existing);
-        initializeComment(existing);
 
-        return CommentMapper.toDTO(existing);
+        return CommentMapper.toDTO(existing, resolveUser(userDTO));
     }
 
-    /** Delete comment */
     public void delete(Long id, UserDTO userDTO) {
         if (userDTO == null)
             throw new UnauthorizedResponse("Login required");
@@ -135,9 +114,12 @@ public class CommentService {
             throw new NotFoundResponse("Comment not found");
 
         boolean isAdmin = userDTO.getRoles().contains("ADMIN");
-        boolean isOwner = existing.getAuthor().getUsername().equals(userDTO.getUsername());
+        boolean isOwner =
+                existing.getAuthor() != null &&
+                        existing.getAuthor().getUsername().equals(userDTO.getUsername());
+
         if (!isAdmin && !isOwner)
-            throw new UnauthorizedResponse("Not allowed to delete this comment");
+            throw new UnauthorizedResponse("Not allowed");
 
         commentDAO.delete(id);
     }

@@ -17,7 +17,8 @@ public class CommentDTO {
     private Long postId;
     private Long parentId;
     private boolean deleted;
+    private boolean ownComment;
 
-    // For returning nested replies (optional)
+    // Needed?
     private List<CommentDTO> replies;
 }
