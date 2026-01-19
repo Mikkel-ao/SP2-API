@@ -97,4 +97,16 @@ public class PostDAO {
             return count > 0;
         }
     }
+
+    // Checks if a post already exists with the given source URL 
+    public boolean existsBySourceUrl(String sourceUrl) {
+        try (EntityManager em = emf.createEntityManager()) {
+            Long count = em.createQuery(
+                            "SELECT COUNT(p) FROM Post p WHERE p.sourceUrl = :sourceUrl", Long.class)
+                    .setParameter("sourceUrl", sourceUrl)
+                    .getSingleResult();
+            return count > 0;
+        }
+    }
+
 }

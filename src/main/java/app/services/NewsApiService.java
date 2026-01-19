@@ -22,7 +22,7 @@ import java.util.List;
 public class NewsApiService {
 
     private static final String BASE_URL = "https://newsapi.org/v2/everything";
-    private static final String QUERY = "cybersecurity OR programming";
+    private static final String QUERY = "cybersecurity programming"; // Change for different categories
 
     private final ObjectMapper objectMapper;
     private final HttpClient client;
@@ -37,60 +37,55 @@ public class NewsApiService {
         this.client = HttpClient.newHttpClient();
         this.apiKey = System.getenv("NEWS_API_KEY");
         if (apiKey == null) {
-            throw new RuntimeException("NEWS_API_KEY not found in environment variables!");
+            throw new IllegalStateException("NEWS_API_KEY not found in environment variables!");
         }
     }
 
-    public List<Post> fetchAndSaveNews() {
+    public List<Post> fetchAndSaveNews() throws Exception {
         List<Post> savedPosts = new ArrayList<>();
-        try {
-            String url = String.format("%s?q=%s&sortBy=popularity&language=en&pageSize=10&apiKey=%s",
-                    BASE_URL, URLEncoder.encode(QUERY, StandardCharsets.UTF_8), apiKey);
 
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(new URI(url))
-                    .GET()
+        String url = String.format("%s?q=%s&language=en&pageSize=10&apiKey=%s",
+                BASE_URL, URLEncoder.encode(QUERY, StandardCharsets.UTF_8), apiKey);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(new URI(url))
+                .GET()
+                .build();
+
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() != 200) {
+            throw new RuntimeException("News API request failed with status: " + response.statusCode());
+        }
+
+        NewsResponseDTO newsResponse = objectMapper.readValue(response.body(), NewsResponseDTO.class);
+
+        if (newsResponse.getArticles() == null || newsResponse.getArticles().isEmpty()) {
+            return savedPosts; // Nothing to save
+        }
+
+        User admin = userDAO.findByUsername("admin");
+        if (admin == null) {
+            throw new RuntimeException("Admin user not found");
+        }
+
+        for (NewsArticleDTO article : newsResponse.getArticles()) {
+            String content = article.getDescription();
+            if (content == null || content.isBlank()) content = article.getContent();
+            if (article.getTitle() == null || content == null || content.isBlank()) continue;
+            if (postDAO.existsByTitle(article.getTitle())) continue;
+
+            Post post = Post.builder()
+                    .title(article.getTitle())
+                    .content(content)
+                    .sourceUrl(article.getUrl())
+                    .sourceName(article.getSource() != null ? article.getSource().getName() : "Unknown")
+                    .createdAt(Instant.now())
+                    .author(admin)
                     .build();
 
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() != 200) {
-                System.err.println("News API request failed. Status: " + response.statusCode());
-                return savedPosts;
-            }
-
-            NewsResponseDTO newsResponse = objectMapper.readValue(response.body(), NewsResponseDTO.class);
-            if (newsResponse.getArticles() == null || newsResponse.getArticles().isEmpty()) {
-                System.out.println("No news articles found.");
-                return savedPosts;
-            }
-
-            // TODO: Consider something more robust - If admin user from populator is removed error occurs.
-            User admin = userDAO.findByUsername("admin");
-            if (admin == null) throw new RuntimeException("Admin user not found");
-
-            for (NewsArticleDTO article : newsResponse.getArticles()) {
-                String content = article.getDescription() != null ? article.getDescription() : "";
-                if (article.getTitle() == null || content.isBlank() || postDAO.existsByTitle(article.getTitle())) {
-                    continue; // skip empty or duplicate titles/content
-                }
-
-                Post post = Post.builder()
-                        .title(article.getTitle())
-                        .content(content)
-                        .sourceUrl(article.getUrl())
-                        .sourceName(article.getSource() != null ? article.getSource().getName() : "Unknown")
-                        .createdAt(Instant.now())
-                        .author(admin)
-                        .build();
-
-                postDAO.save(post);
-                savedPosts.add(post);
-            }
-
-        } catch (Exception e) {
-            System.err.println("Error fetching or saving tech news: " + e.getMessage());
-            e.printStackTrace();
+            postDAO.save(post);
+            savedPosts.add(post);
         }
 
         return savedPosts;

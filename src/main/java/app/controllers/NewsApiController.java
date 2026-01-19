@@ -4,7 +4,6 @@ import app.entities.Post;
 import app.services.NewsApiService;
 import io.javalin.http.Context;
 
-import java.io.IOException;
 import java.util.List;
 
 public class NewsApiController {
@@ -15,7 +14,8 @@ public class NewsApiController {
         this.newsService = newsService;
     }
 
-    public void fetchNews(Context ctx) throws IOException, InterruptedException {
+    // No try/catch here; exceptions bubble to global handler
+    public void fetchNews(Context ctx) throws Exception {
         List<Post> posts = newsService.fetchAndSaveNews();
         ctx.json(posts);
     }

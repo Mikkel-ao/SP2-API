@@ -25,7 +25,6 @@ public class NewsApiRoute {
 
     public EndpointGroup getRoutes() {
         return () -> {
-            // remove extra /external path here
             post("/fetch-news", newsController::fetchNews, UserRole.ADMIN);
         };
     }

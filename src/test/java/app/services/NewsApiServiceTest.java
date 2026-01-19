@@ -17,7 +17,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class NewsApiServiceTest {
-/*
+
     private NewsApiService newsApiService;
     private UserDAO userDAO;
     private PostDAO postDAO;
@@ -58,6 +58,4 @@ class NewsApiServiceTest {
             assertNotNull(post.getContent(), "Post should have content");
         }
     }
-
- */
 }
