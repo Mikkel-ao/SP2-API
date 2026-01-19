@@ -98,7 +98,7 @@ public class PostDAO {
         }
     }
 
-    // Checks if a post already exists with the given source URL 
+    // Checks if a post already exists with the given source URL
     public boolean existsBySourceUrl(String sourceUrl) {
         try (EntityManager em = emf.createEntityManager()) {
             Long count = em.createQuery(

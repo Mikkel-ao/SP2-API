@@ -42,7 +42,7 @@ class NewsApiServiceTest {
 
 
     @Test
-    void fetchAndSaveNewsTest() {
+    void fetchAndSaveNewsTest() throws Exception {
         // Act
         List<Post> posts = newsApiService.fetchAndSaveNews();
 
