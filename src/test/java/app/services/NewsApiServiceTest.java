@@ -58,6 +58,6 @@ class NewsApiServiceTest {
             assertNotNull(post.getContent(), "Post should have content");
         }
     }
-    
+
  */
 }

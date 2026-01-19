@@ -60,6 +60,11 @@ public class HibernateConfig {
             Configuration configuration = new Configuration();
             Properties props = new Properties();
 
+            System.out.println("Hibernate URL: " +
+                    props.getProperty("hibernate.connection.url"));
+
+
+
             setBaseProperties(props);
 
             if (forTest) {
@@ -80,6 +85,8 @@ public class HibernateConfig {
             SessionFactory sf = configuration.buildSessionFactory(serviceRegistry);
             return sf.unwrap(EntityManagerFactory.class);
 
+
+
         } catch (Throwable ex) {
             System.err.println("Initial SessionFactory creation failed." + ex);
             throw new ExceptionInInitializerError(ex);
@@ -99,7 +106,7 @@ public class HibernateConfig {
         props.setProperty("hibernate.connection.url", System.getenv("CONNECTION_STR") + DBName);
         props.setProperty("hibernate.connection.username", System.getenv("DB_USERNAME"));
         props.setProperty("hibernate.connection.password", System.getenv("DB_PASSWORD"));
-        props.setProperty("hibernate.hbm2ddl.auto", "update");
+        props.setProperty("hibernate.hbm2ddl.auto", "create");
     }
 
     private static void setDevProperties(Properties props) {
