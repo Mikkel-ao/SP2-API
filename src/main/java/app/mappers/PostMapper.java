@@ -16,15 +16,23 @@ public class PostMapper {
                 .sourceUrl(post.getSourceUrl())
                 .sourceName(post.getSourceName())
                 .createdAt(post.getCreatedAt())
-                .authorUsername(post.getAuthor() != null ? post.getAuthor().getUsername() : null)
-                .comments(post.getComments() != null
-                        ? post.getComments().stream()
-                        .filter(c -> !c.isDeleted())
-                        .map(CommentMapper::toDTO)
-                        .collect(Collectors.toList())
-                        : null)
+                .authorUsername(
+                        post.getAuthor() != null
+                                ? post.getAuthor().getUsername()
+                                : null
+                )
+                .comments(
+                        post.getComments() != null
+                                ? post.getComments().stream()
+                                .filter(c -> !c.isDeleted())
+                                .filter(c -> c.getParent() == null) // only top-level comments
+                                .map(CommentMapper::toDTO)
+                                .collect(Collectors.toList())
+                                : null
+                )
                 .build();
     }
+
 
     public static Post toEntity(PostDTO dto) {
         if (dto == null) return null;
