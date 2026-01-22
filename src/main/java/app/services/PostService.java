@@ -25,7 +25,6 @@ public class PostService {
         this.userDAO = userDAO;
     }
 
-    /** Recursively initializes all comments and their nested replies */
     private void initializeComments(Post post) {
         if (post == null || post.getComments() == null) return;
         post.getComments().forEach(this::initializeCommentRecursively);
@@ -43,26 +42,32 @@ public class PostService {
         }
     }
 
-    /** Get all posts */
-    public List<PostDTO> getAll() {
+    public List<PostDTO> getAll(UserDTO userDTO) {
+        User currentUser = userDTO != null
+                ? userDAO.findByUsername(userDTO.getUsername())
+                : null;
+
         List<Post> posts = postDAO.findAll();
         posts.forEach(this::initializeComments);
+
         return posts.stream()
-                .map(PostMapper::toDTO)
+                .map(p -> PostMapper.toDTO(p, currentUser))
                 .toList();
     }
 
-    /** Get post by ID */
-    public PostDTO getById(Long id) {
+    public PostDTO getById(Long id, UserDTO userDTO) {
+        User currentUser = userDTO != null
+                ? userDAO.findByUsername(userDTO.getUsername())
+                : null;
+
         Post post = postDAO.find(id);
         if (post == null)
             throw new NotFoundResponse("Post not found");
 
         initializeComments(post);
-        return PostMapper.toDTO(post);
+        return PostMapper.toDTO(post, currentUser);
     }
 
-    /** Create new post */
     public PostDTO create(PostDTO input, UserDTO userDTO) {
         if (userDTO == null)
             throw new UnauthorizedResponse("Login required");
@@ -89,10 +94,9 @@ public class PostService {
         postDAO.create(post);
         initializeComments(post);
 
-        return PostMapper.toDTO(post);
+        return PostMapper.toDTO(post, author);
     }
 
-    /** Update existing post */
     public PostDTO update(Long id, PostDTO input, UserDTO userDTO) {
         if (userDTO == null)
             throw new UnauthorizedResponse("Login required");
@@ -114,10 +118,10 @@ public class PostService {
         postDAO.update(existing);
         initializeComments(existing);
 
-        return PostMapper.toDTO(existing);
+        User currentUser = userDAO.findByUsername(userDTO.getUsername());
+        return PostMapper.toDTO(existing, currentUser);
     }
 
-    /** Delete post */
     public void delete(Long id, UserDTO userDTO) {
         if (userDTO == null)
             throw new UnauthorizedResponse("Login required");

@@ -9,20 +9,21 @@ public class PostController implements IController<PostDTO> {
 
     private final PostService service;
 
-    // Constructor injection
     public PostController(PostService service) {
         this.service = service;
     }
 
     @Override
     public void getAll(Context ctx) {
-        ctx.json(service.getAll(), PostDTO.class);
+        UserDTO user = ctx.attribute("user"); // may be null
+        ctx.json(service.getAll(user), PostDTO.class);
     }
 
     @Override
     public void getById(Context ctx) {
+        UserDTO user = ctx.attribute("user"); // may be null
         Long id = ctx.pathParamAsClass("id", Long.class).get();
-        ctx.json(service.getById(id), PostDTO.class);
+        ctx.json(service.getById(id, user), PostDTO.class);
     }
 
     @Override

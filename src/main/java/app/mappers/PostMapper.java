@@ -2,11 +2,13 @@ package app.mappers;
 
 import app.dtos.PostDTO;
 import app.entities.Post;
+import app.entities.User;
+
 import java.util.stream.Collectors;
 
 public class PostMapper {
 
-    public static PostDTO toDTO(Post post) {
+    public static PostDTO toDTO(Post post, User currentUser) {
         if (post == null) return null;
 
         return PostDTO.builder()
@@ -25,14 +27,13 @@ public class PostMapper {
                         post.getComments() != null
                                 ? post.getComments().stream()
                                 .filter(c -> !c.isDeleted())
-                                .filter(c -> c.getParent() == null) // only top-level comments
-                                .map(CommentMapper::toDTO)
+                                .filter(c -> c.getParent() == null)
+                                .map(c -> CommentMapper.toDTO(c, currentUser))
                                 .collect(Collectors.toList())
                                 : null
                 )
                 .build();
     }
-
 
     public static Post toEntity(PostDTO dto) {
         if (dto == null) return null;
