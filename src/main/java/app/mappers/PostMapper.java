@@ -6,8 +6,10 @@ import app.entities.User;
 
 import java.util.stream.Collectors;
 
+
 public class PostMapper {
 
+    /** Convert Post entity to DTO */
     public static PostDTO toDTO(Post post, User currentUser) {
         if (post == null) return null;
 
@@ -27,7 +29,7 @@ public class PostMapper {
                         post.getComments() != null
                                 ? post.getComments().stream()
                                 .filter(c -> !c.isDeleted())
-                                .filter(c -> c.getParent() == null)
+                                .filter(c -> c.getParent() == null) // only top-level comments
                                 .map(c -> CommentMapper.toDTO(c, currentUser))
                                 .collect(Collectors.toList())
                                 : null
@@ -35,6 +37,7 @@ public class PostMapper {
                 .build();
     }
 
+    /** Convert PostDTO back to entity */
     public static Post toEntity(PostDTO dto) {
         if (dto == null) return null;
 

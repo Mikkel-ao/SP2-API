@@ -15,6 +15,7 @@ import io.javalin.http.UnauthorizedResponse;
 import java.time.Instant;
 import java.util.List;
 
+
 public class PostService {
 
     private final PostDAO postDAO;
@@ -25,6 +26,7 @@ public class PostService {
         this.userDAO = userDAO;
     }
 
+    /** Recursively initializes all comments and their nested replies */
     private void initializeComments(Post post) {
         if (post == null || post.getComments() == null) return;
         post.getComments().forEach(this::initializeCommentRecursively);
@@ -42,6 +44,7 @@ public class PostService {
         }
     }
 
+    /** Get all posts, including ownComment for each comment if user is logged in */
     public List<PostDTO> getAll(UserDTO userDTO) {
         User currentUser = userDTO != null
                 ? userDAO.findByUsername(userDTO.getUsername())
@@ -55,6 +58,7 @@ public class PostService {
                 .toList();
     }
 
+    /** Get post by ID, including ownComment for each comment */
     public PostDTO getById(Long id, UserDTO userDTO) {
         User currentUser = userDTO != null
                 ? userDAO.findByUsername(userDTO.getUsername())
@@ -68,6 +72,7 @@ public class PostService {
         return PostMapper.toDTO(post, currentUser);
     }
 
+    /** Create a new post */
     public PostDTO create(PostDTO input, UserDTO userDTO) {
         if (userDTO == null)
             throw new UnauthorizedResponse("Login required");
@@ -97,6 +102,7 @@ public class PostService {
         return PostMapper.toDTO(post, author);
     }
 
+    /** Update an existing post */
     public PostDTO update(Long id, PostDTO input, UserDTO userDTO) {
         if (userDTO == null)
             throw new UnauthorizedResponse("Login required");
@@ -122,6 +128,7 @@ public class PostService {
         return PostMapper.toDTO(existing, currentUser);
     }
 
+    /** Delete a post */
     public void delete(Long id, UserDTO userDTO) {
         if (userDTO == null)
             throw new UnauthorizedResponse("Login required");

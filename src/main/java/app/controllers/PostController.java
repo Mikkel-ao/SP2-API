@@ -15,7 +15,9 @@ public class PostController implements IController<PostDTO> {
 
     @Override
     public void getAll(Context ctx) {
-        UserDTO user = ctx.attribute("user"); // may be null
+        // Retrieve the current logged-in user from context; may be null
+        UserDTO user = ctx.attribute("user");
+        // Pass the user to the service so comments know ownComment
         ctx.json(service.getAll(user), PostDTO.class);
     }
 
