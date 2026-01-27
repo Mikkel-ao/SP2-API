@@ -4,7 +4,13 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "votes")
+@Table(
+        name = "votes",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"user_username", "post_id"}),
+                @UniqueConstraint(columnNames = {"user_username", "comment_id"})
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -16,14 +22,17 @@ public class Vote {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private int value; // +1 or -1
+    private int value;
 
     @ManyToOne(optional = false)
+    @JoinColumn(name = "user_username")
     private User user;
 
     @ManyToOne
-    private Post post; // Nullable
+    @JoinColumn(name = "post_id")
+    private Post post;
 
     @ManyToOne
-    private Comment comment; // Nullable
+    @JoinColumn(name = "comment_id")
+    private Comment comment;
 }

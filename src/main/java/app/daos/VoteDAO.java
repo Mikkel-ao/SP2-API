@@ -71,4 +71,33 @@ public class VoteDAO {
         }
     }
 
+    public Vote findByUserAndPost(String username, Long postId) {
+        try (EntityManager em = emf.createEntityManager()) {
+            return em.createQuery(
+                            "SELECT v FROM Vote v WHERE v.user.username = :username AND v.post.id = :postId",
+                            Vote.class
+                    )
+                    .setParameter("username", username)
+                    .setParameter("postId", postId)
+                    .getResultStream()
+                    .findFirst()
+                    .orElse(null);
+        }
+    }
+
+    public Vote findByUserAndComment(String username, Long commentId) {
+        try (EntityManager em = emf.createEntityManager()) {
+            return em.createQuery(
+                            "SELECT v FROM Vote v WHERE v.user.username = :username AND v.comment.id = :commentId",
+                            Vote.class
+                    )
+                    .setParameter("username", username)
+                    .setParameter("commentId", commentId)
+                    .getResultStream()
+                    .findFirst()
+                    .orElse(null);
+        }
+    }
+
+
 }

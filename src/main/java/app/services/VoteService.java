@@ -48,40 +48,33 @@ public class VoteService {
     public VoteDTO create(VoteDTO input, UserDTO userDTO) {
         if (userDTO == null) throw new UnauthorizedResponse("Login required");
 
-        if (input.getValue() == null || (input.getValue() != 1 && input.getValue() != -1))
+        int value = input.getValue();
+        if (value != 1 && value != -1)
             throw new BadRequestResponse("Vote value must be +1 or -1");
 
         User user = userDAO.findByUsername(userDTO.getUsername());
         if (user == null) throw new UnauthorizedResponse("User not found");
 
-        Post post = null;
-        Comment comment = null;
+        Vote existing;
 
         if (input.getPostId() != null) {
-            post = postDAO.find(input.getPostId());
+            Post post = postDAO.find(input.getPostId());
             if (post == null) throw new NotFoundResponse("Post not found");
+
+            existing = voteDAO.findByUserAndPost(user.getUsername(), post.getId());
+
+            return handleVote(existing, value, user, post, null);
+
         } else if (input.getCommentId() != null) {
-            comment = commentDAO.find(input.getCommentId());
+            Comment comment = commentDAO.find(input.getCommentId());
             if (comment == null) throw new NotFoundResponse("Comment not found");
-        } else {
-            throw new BadRequestResponse("Vote must target either a post or a comment");
+
+            existing = voteDAO.findByUserAndComment(user.getUsername(), comment.getId());
+
+            return handleVote(existing, value, user, null, comment);
         }
 
-        boolean alreadyVoted = (post != null)
-                ? voteDAO.findByPostId(post.getId())
-                .stream().anyMatch(v -> v.getUser().getUsername().equals(user.getUsername()))
-                : voteDAO.findByCommentId(comment.getId())
-                .stream().anyMatch(v -> v.getUser().getUsername().equals(user.getUsername()));
-
-        if (alreadyVoted) throw new ConflictResponse("User has already voted on this item");
-
-        Vote vote = VoteMapper.toEntity(input);
-        vote.setUser(user);
-        vote.setPost(post);
-        vote.setComment(comment);
-
-        voteDAO.create(vote);
-        return VoteMapper.toDTO(vote);
+        throw new BadRequestResponse("Vote must target post or comment");
     }
 
     public void delete(Long id, UserDTO userDTO) {
@@ -96,4 +89,33 @@ public class VoteService {
 
         voteDAO.delete(id);
     }
+
+    private VoteDTO handleVote(
+            Vote existing,
+            int newValue,
+            User user,
+            Post post,
+            Comment comment
+    ) {
+        if (existing == null) {
+            Vote vote = Vote.builder()
+                    .value(newValue)
+                    .user(user)
+                    .post(post)
+                    .comment(comment)
+                    .build();
+            voteDAO.create(vote);
+            return VoteMapper.toDTO(vote);
+        }
+
+        if (existing.getValue() == newValue) {
+            voteDAO.delete(existing.getId()); // toggle off
+            return null; // frontend interprets as "no vote"
+        }
+
+        existing.setValue(newValue); // switch vote
+        voteDAO.update(existing);
+        return VoteMapper.toDTO(existing);
+    }
+
 }
