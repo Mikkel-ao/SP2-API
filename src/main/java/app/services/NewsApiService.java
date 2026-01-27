@@ -22,7 +22,7 @@ import java.util.List;
 public class NewsApiService {
 
     private static final String BASE_URL = "https://newsapi.org/v2/everything";
-    private static final String QUERY = "cybersecurity programming"; // Change for different categories
+    private static final String QUERY = "software"; // Change for different categories
 
     private final ObjectMapper objectMapper;
     private final HttpClient client;
