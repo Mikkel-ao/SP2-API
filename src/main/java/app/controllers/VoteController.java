@@ -45,4 +45,10 @@ public class VoteController implements IController<VoteDTO> {
         service.delete(id, user);
         ctx.status(204);
     }
+
+    public void getPostScore(Context ctx) {
+        Long id = ctx.pathParamAsClass("id", Long.class).get();
+        ctx.json(service.getPostScore(id));
+    }
+
 }

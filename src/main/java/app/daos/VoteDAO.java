@@ -99,5 +99,16 @@ public class VoteDAO {
         }
     }
 
+    public int getPostScore(Long postId) {
+        try (EntityManager em = emf.createEntityManager()) {
+            return em.createQuery(
+                            "SELECT COALESCE(SUM(v.value), 0) FROM Vote v WHERE v.post.id = :id",
+                            Integer.class
+                    ).setParameter("id", postId)
+                    .getSingleResult();
+        }
+    }
+
+
 
 }

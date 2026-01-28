@@ -118,4 +118,9 @@ public class VoteService {
         return VoteMapper.toDTO(existing);
     }
 
+    public int getPostScore(Long postId) {
+        postDAO.find(postId); // validates existence
+        return voteDAO.getPostScore(postId);
+    }
+
 }
