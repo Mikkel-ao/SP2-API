@@ -21,7 +21,6 @@ public class CommentRoute {
         return () -> {
             get("/", commentController::getAll, UserRole.ANYONE);
             get("/{id}", commentController::getById, UserRole.ANYONE);
-            get("/{id}/score", voteController::getCommentScore, UserRole.ANYONE);
             post("/", commentController::create, UserRole.USER);
             delete("/{id}", commentController::delete, UserRole.USER);
         };
