@@ -123,4 +123,10 @@ public class VoteService {
         return voteDAO.getPostScore(postId);
     }
 
+    public int getCommentScore(Long commentId) {
+        commentDAO.find(commentId); // validate exists
+        return voteDAO.getCommentScore(commentId);
+    }
+
+
 }

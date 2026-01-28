@@ -1,8 +1,8 @@
 package app.configs;
 
 import app.populators.DataPopulator;
-import app.routes.SecurityRoutes;
 import app.routes.Routes;
+import app.routes.SecurityRoutes;
 import app.securities.controllers.AccessController;
 import app.securities.controllers.SecurityController;
 import app.enums.UserRole;
@@ -11,34 +11,45 @@ import app.utils.Utils;
 import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
 import io.javalin.http.Context;
-import jakarta.persistence.EntityManagerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ApplicationConfig {
 
     private static final Logger logger = LoggerFactory.getLogger(ApplicationConfig.class);
-    private static final Routes routes = new Routes();
+
+    // -------------------------
+    // Dependency container
+    // -------------------------
+    private static final AppContainer container = new AppContainer();
+    private static final Routes routes = new Routes(container);
     private static final SecurityController securityController = SecurityController.getInstance();
     private static final AccessController accessController = new AccessController();
-    private static final EntityManagerFactory emf = HibernateConfig.getEntityManagerFactory();
-    private static final DataPopulator dataPopulator = new DataPopulator(emf);
+    private static final DataPopulator dataPopulator = new DataPopulator(container.emf);
 
     private static int requestCount = 1;
 
+    // -------------------------
+    // Javalin configuration
+    // -------------------------
     public static void configuration(JavalinConfig config) {
         config.showJavalinBanner = false;
         config.bundledPlugins.enableRouteOverview("/routes", UserRole.ANYONE);
         config.router.contextPath = "/api";
+
+        // API routes
         config.router.apiBuilder(routes.getRoutes());
         config.router.apiBuilder(SecurityRoutes.getSecuredRoutes());
         config.router.apiBuilder(SecurityRoutes.getSecurityRoutes());
     }
 
+    // -------------------------
+    // Start the server
+    // -------------------------
     public static Javalin startServer(int port) {
         Javalin app = Javalin.create(ApplicationConfig::configuration);
 
-        // CORS MUST run before any auth or route matching
+        // CORS must run before any auth or route matching
         app.before(ApplicationConfig::corsHeaders);
         app.options("/*", ApplicationConfig::corsHeadersOptions);
 
@@ -55,27 +66,33 @@ public class ApplicationConfig {
         // Populate initial data
         logger.info("Populating initial data...");
         dataPopulator.populateAll();
-
         logger.info("Data population complete.");
-
-
 
         app.start(port);
         return app;
     }
 
+    // -------------------------
+    // After request logging
+    // -------------------------
     public static void afterRequest(Context ctx) {
         String requestInfo = ctx.req().getMethod() + " " + ctx.req().getRequestURI();
         logger.info("Request {} - {} handled with status {}", requestCount++, requestInfo, ctx.status());
     }
 
+    // -------------------------
+    // Stop server & close EMF
+    // -------------------------
     public static void stopServer(Javalin app) {
         app.stop();
-        if (emf.isOpen()) {
-            emf.close();
+        if (container.emf.isOpen()) {
+            container.emf.close();
         }
     }
 
+    // -------------------------
+    // Exception handlers
+    // -------------------------
     private static void generalExceptionHandler(Exception e, Context ctx) {
         logger.error("Unhandled exception", e);
         ctx.json(Utils.convertToJsonMessage(ctx, "error", e.getMessage()));
@@ -87,9 +104,9 @@ public class ApplicationConfig {
         ctx.json(Utils.convertToJsonMessage(ctx, "warning", e.getMessage()));
     }
 
-    /**
-     * CORS – development-friendly, credential-safe
-     */
+    // -------------------------
+    // CORS support
+    // -------------------------
     private static void corsHeaders(Context ctx) {
         String origin = ctx.header("Origin");
 

@@ -50,4 +50,5 @@ public class PostController implements IController<PostDTO> {
         service.delete(id, user);
         ctx.status(204);
     }
+
 }

@@ -51,4 +51,10 @@ public class VoteController implements IController<VoteDTO> {
         ctx.json(service.getPostScore(id));
     }
 
+    public void getCommentScore(Context ctx) {
+        Long id = ctx.pathParamAsClass("id", Long.class).get();
+        ctx.json(service.getCommentScore(id));
+    }
+
+
 }
