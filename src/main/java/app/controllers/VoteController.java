@@ -5,6 +5,8 @@ import app.services.VoteService;
 import dk.bugelhartmann.UserDTO;
 import io.javalin.http.Context;
 
+import java.util.Map;
+
 public class VoteController implements IController<VoteDTO> {
 
     private final VoteService service;
@@ -48,12 +50,14 @@ public class VoteController implements IController<VoteDTO> {
 
     public void getPostScore(Context ctx) {
         Long id = ctx.pathParamAsClass("id", Long.class).get();
-        ctx.json(service.getPostScore(id));
+        int score = service.getPostScore(id);
+        ctx.json(Map.of("score", score)); // wrap in JSON object
     }
 
     public void getCommentScore(Context ctx) {
         Long id = ctx.pathParamAsClass("id", Long.class).get();
-        ctx.json(service.getCommentScore(id));
+        int score = service.getCommentScore(id);
+        ctx.json(Map.of("score", score));
     }
 
 

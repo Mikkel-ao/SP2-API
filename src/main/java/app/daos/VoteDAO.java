@@ -101,23 +101,28 @@ public class VoteDAO {
 
     public int getPostScore(Long postId) {
         try (EntityManager em = emf.createEntityManager()) {
-            return em.createQuery(
+            Long score = em.createQuery(
                             "SELECT COALESCE(SUM(v.value), 0) FROM Vote v WHERE v.post.id = :id",
-                            Integer.class
-                    ).setParameter("id", postId)
+                            Long.class // <-- change from Integer.class
+                    )
+                    .setParameter("id", postId)
                     .getSingleResult();
+            return score != null ? score.intValue() : 0; // convert to int
         }
     }
 
     public int getCommentScore(Long commentId) {
         try (EntityManager em = emf.createEntityManager()) {
-            return em.createQuery(
+            Long score = em.createQuery(
                             "SELECT COALESCE(SUM(v.value), 0) FROM Vote v WHERE v.comment.id = :id",
-                            Integer.class
-                    ).setParameter("id", commentId)
+                            Long.class // <-- change from Integer.class
+                    )
+                    .setParameter("id", commentId)
                     .getSingleResult();
+            return score != null ? score.intValue() : 0;
         }
     }
+
 
 
 
